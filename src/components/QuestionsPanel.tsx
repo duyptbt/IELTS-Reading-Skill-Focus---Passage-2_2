@@ -19,6 +19,7 @@ import {
   Bookmark,
   Lightbulb,
   X,
+  Sparkles,
 } from 'lucide-react';
 
 interface QuestionsPanelProps {
@@ -35,6 +36,8 @@ interface QuestionsPanelProps {
   flaggedQuestions: Set<number>;
   onToggleFlag: (questionId: number) => void;
   onSubmitTest?: () => void;
+  onGoToConsolidation?: () => void;
+  isConsolidationUnlocked?: boolean;
   highlightColor?: HighlightColor;
   onSelectHighlightColor?: (color: HighlightColor) => void;
   isHighlighterActive?: boolean;
@@ -59,6 +62,8 @@ export const QuestionsPanel: React.FC<QuestionsPanelProps> = ({
   flaggedQuestions,
   onToggleFlag,
   onSubmitTest,
+  onGoToConsolidation,
+  isConsolidationUnlocked = false,
   highlightColor: currentHighlightColor = 'yellow' as HighlightColor,
   onSelectHighlightColor = (_color: HighlightColor) => {},
   isHighlighterActive = false,
@@ -939,7 +944,25 @@ export const QuestionsPanel: React.FC<QuestionsPanelProps> = ({
 
       {/* Bottom Action Bar */}
       {onSubmitTest && (
-        <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+        <div className="p-4 bg-white border-t border-slate-200 shrink-0 space-y-2.5">
+          {isPracticeMode && showPracticeAnswers && onGoToConsolidation && (
+            <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                <div>
+                  <span className="font-bold text-slate-900">Consolidation Unlocked: </span>
+                  <span className="text-slate-600">Review key language input, collocations & skills practice.</span>
+                </div>
+              </div>
+              <button
+                onClick={onGoToConsolidation}
+                className="px-3.5 py-1.5 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs whitespace-nowrap transition shadow-xs cursor-pointer"
+              >
+                Study Language →
+              </button>
+            </div>
+          )}
+
           <button
             id="submit-answers-bottom-btn"
             onClick={onSubmitTest}

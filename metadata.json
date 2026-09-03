@@ -1,6 +1,6 @@
 {
   "name": "IELTS Reading Skill Focus - Passage 2_2",
-  "description": "IELTS Reading Practice \u0026 Test platform for Passage 2 (The changing role of airports) with Practice Mode, 20-minute Test Mode, interactive highlighter, collapsible notes, and full explanations.",
+  "description": "IELTS Reading Practice and Test platform for Passage 2 with 20-minute Test Mode, Practice Mode, and post-test Consolidation Hub with language input, vocabulary, academic structures, and reading skill activities.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

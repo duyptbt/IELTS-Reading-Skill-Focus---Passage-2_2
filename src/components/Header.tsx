@@ -11,6 +11,8 @@ import {
   Eye,
   EyeOff,
   FileCheck2,
+  Sparkles,
+  Lock,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -28,6 +30,9 @@ interface HeaderProps {
   onResetAnswers: () => void;
   answeredCount: number;
   totalQuestions: number;
+  // Consolidation Props
+  isConsolidationUnlocked: boolean;
+  onAttemptLockedConsolidation?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -43,6 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
   onResetAnswers,
   answeredCount,
   totalQuestions,
+  isConsolidationUnlocked,
+  onAttemptLockedConsolidation,
 }) => {
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -77,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="mode-practice-btn"
             onClick={() => onSelectMode('practice')}
-            className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded transition-all text-xs sm:text-sm font-medium ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded transition-all text-xs sm:text-sm font-medium ${
               mode === 'practice'
                 ? 'bg-blue-600 text-white shadow font-semibold'
                 : 'text-slate-300 hover:text-white'
@@ -90,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="mode-test-btn"
             onClick={() => onSelectMode('test')}
-            className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded transition-all text-xs sm:text-sm font-medium ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded transition-all text-xs sm:text-sm font-medium ${
               mode === 'test'
                 ? 'bg-blue-600 text-white shadow font-semibold'
                 : 'text-slate-300 hover:text-white'
@@ -99,11 +106,55 @@ export const Header: React.FC<HeaderProps> = ({
             <GraduationCap className="w-3.5 h-3.5" />
             <span>Test Mode</span>
           </button>
+
+          <button
+            id="mode-consolidation-btn"
+            onClick={() => {
+              if (isConsolidationUnlocked) {
+                onSelectMode('consolidation');
+              } else if (onAttemptLockedConsolidation) {
+                onAttemptLockedConsolidation();
+              }
+            }}
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded transition-all text-xs sm:text-sm font-medium cursor-pointer ${
+              mode === 'consolidation'
+                ? 'bg-blue-600 text-white shadow font-semibold'
+                : isConsolidationUnlocked
+                ? 'text-amber-300 hover:text-white hover:bg-slate-700/60'
+                : 'text-slate-400 hover:text-slate-300 hover:bg-slate-700/30'
+            }`}
+            title={
+              isConsolidationUnlocked
+                ? 'Consolidation & Language Hub (Unlocked)'
+                : 'Consolidation activates once you complete Practice or Test mode'
+            }
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isConsolidationUnlocked ? 'text-amber-400' : 'text-slate-400'}`} />
+            <span>Consolidation</span>
+            {isConsolidationUnlocked ? (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5" />
+            ) : (
+              <Lock className="w-3 h-3 text-slate-400 ml-0.5" />
+            )}
+          </button>
         </div>
 
         {/* Mode-Specific Actions */}
         <div className="flex items-center gap-2">
-          {mode === 'test' ? (
+          {mode === 'consolidation' ? (
+            /* CONSOLIDATION MODE: Navigation shortcuts */
+            <div className="flex items-center gap-2">
+              <span className="hidden lg:inline-flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-950/60 border border-indigo-500/40 text-indigo-200 text-xs font-medium">
+                <Sparkles className="w-3 h-3 text-indigo-400" /> Language & Skill Tasks
+              </span>
+              <button
+                onClick={() => onSelectMode('practice')}
+                className="px-3 py-1.5 rounded text-xs font-medium bg-slate-800 text-slate-200 hover:text-white hover:bg-slate-700 border border-slate-700 transition"
+              >
+                Questions
+              </button>
+            </div>
+          ) : mode === 'test' ? (
             /* TEST MODE: 20-minute Timer & Submit */
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Timer Pill with Pulsing Indicator */}
@@ -169,6 +220,16 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>{showPracticeAnswers ? 'Hide Answers' : 'Check Answers'}</span>
               </button>
 
+              {isConsolidationUnlocked && (
+                <button
+                  onClick={() => onSelectMode('consolidation')}
+                  className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                  <span>Consolidation</span>
+                </button>
+              )}
+
               <button
                 id="btn-reset-practice"
                 onClick={onResetAnswers}
@@ -184,3 +245,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

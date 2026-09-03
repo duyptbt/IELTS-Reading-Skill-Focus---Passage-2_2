@@ -1,4 +1,4 @@
-export type AppMode = 'practice' | 'test';
+export type AppMode = 'practice' | 'test' | 'consolidation';
 
 export interface QuestionTip {
   id?: string;
@@ -56,4 +56,74 @@ export interface TestResult {
     paragraphRef: string;
   }[];
 }
+
+// Consolidation Language Input & Reading Skill Activities Types
+export interface VocabItem {
+  id: string;
+  term: string;
+  phonetic: string;
+  partOfSpeech: string;
+  definition: string;
+  passageQuote: string;
+  paragraphRef: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  collocations: string[];
+  synonyms: string[];
+  ieltsBand: 'Band 7' | 'Band 8' | 'Band 9';
+  category: 'Metaphors & Idioms' | 'Academic Verbs' | 'Business & Economics' | 'Formal Collocations';
+  writingSpeakingTip: string;
+}
+
+export interface AcademicStructure {
+  id: string;
+  title: string;
+  category: string;
+  pattern: string;
+  passageExample: string;
+  paragraphRef: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  explanation: string;
+  ieltsApplication: string;
+  templateExercise: {
+    scaffold: string;
+    sampleCompletion: string;
+  };
+}
+
+export interface SynonymMatchTask {
+  id: string;
+  passageWord: string;
+  paragraphRef: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  passageContext: string;
+  correctSynonym: string;
+  distractors: string[];
+  ieltsTrapNote: string;
+}
+
+export interface CollocationGapTask {
+  id: string;
+  sentence: string;
+  missingWord: string;
+  options: string[];
+  passageRef: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  explanation: string;
+  collocationRule: string;
+}
+
+export interface DiscourseAnalysisTask {
+  id: string;
+  connector: string;
+  sentenceContext: string;
+  paragraphRef: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  functionType: 'Cause & Effect' | 'Concession & Counter-argument' | 'Sequence & Historical Transition' | 'Hedging & Evaluation' | 'Exemplification';
+  options: string[];
+  explanation: string;
+}
+
+export interface SpeedEvidenceTask {
+  id: string;
+  prompt: string;
+  correctParagraph: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+  keyEvidenceQuote: string;
+  scanningClue: string;
+}
+
 

@@ -9,6 +9,7 @@ interface TestResultsModalProps {
   onClose: () => void;
   onRetake: () => void;
   onReviewInPractice: () => void;
+  onGoToConsolidation?: () => void;
 }
 
 export const TestResultsModal: React.FC<TestResultsModalProps> = ({
@@ -17,6 +18,7 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
   onClose,
   onRetake,
   onReviewInPractice,
+  onGoToConsolidation,
 }) => {
   if (!isOpen || !result) return null;
 
@@ -150,11 +152,20 @@ export const TestResultsModal: React.FC<TestResultsModalProps> = ({
             </button>
             <button
               onClick={onReviewInPractice}
-              className="flex items-center gap-1.5 px-4 py-2 rounded text-xs font-bold bg-[#1E293B] hover:bg-slate-800 text-white tracking-wider uppercase transition shadow-xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 transition"
             >
               <Eye className="w-3.5 h-3.5" />
-              <span>Review with Tips & Explanations</span>
+              <span>Review Practice Key</span>
             </button>
+            {onGoToConsolidation && (
+              <button
+                onClick={onGoToConsolidation}
+                className="flex items-center gap-1.5 px-4 py-2 rounded text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white tracking-wider uppercase transition shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Go to Consolidation Hub</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

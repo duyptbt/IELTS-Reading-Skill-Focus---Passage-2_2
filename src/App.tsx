@@ -4,6 +4,8 @@ import { PARAGRAPHS, QUESTIONS, calculateBandScore } from './data/ieltsData';
 import { Header } from './components/Header';
 import { PassagePanel } from './components/PassagePanel';
 import { QuestionsPanel } from './components/QuestionsPanel';
+import { ConsolidationPanel } from './components/ConsolidationPanel';
+import { LockedConsolidationModal } from './components/LockedConsolidationModal';
 import { Divider } from './components/Divider';
 import { TestResultsModal } from './components/TestResultsModal';
 import { HighlightColor } from './components/HighlighterToolbar';
@@ -14,6 +16,18 @@ const INITIAL_TEST_SECONDS = 20 * 60; // 20 minutes
 export default function App() {
   // Mode state
   const [mode, setMode] = useState<AppMode>('practice');
+
+  // Consolidation unlocked state & full width preference
+  const [isConsolidationUnlocked, setIsConsolidationUnlocked] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('ielts_consolidation_unlocked');
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isLockedModalOpen, setIsLockedModalOpen] = useState<boolean>(false);
+  const [isConsolidationFullWidth, setIsConsolidationFullWidth] = useState<boolean>(false);
 
   // Answers state: questionId -> string
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>(() => {
@@ -95,6 +109,10 @@ export default function App() {
   }, [userAnswers]);
 
   useEffect(() => {
+    localStorage.setItem('ielts_consolidation_unlocked', isConsolidationUnlocked ? 'true' : 'false');
+  }, [isConsolidationUnlocked]);
+
+  useEffect(() => {
     localStorage.setItem('ielts_passage_notes', passageNotes);
   }, [passageNotes]);
 
@@ -132,6 +150,10 @@ export default function App() {
 
   // Handlers for Mode change
   const handleSelectMode = (newMode: AppMode) => {
+    if (newMode === 'consolidation' && !isConsolidationUnlocked) {
+      setIsLockedModalOpen(true);
+      return;
+    }
     setMode(newMode);
     if (newMode === 'test') {
       setShowPracticeAnswers(false);
@@ -140,8 +162,28 @@ export default function App() {
         setIsTimerRunning(true);
       }
     } else {
-      // In practice mode, stop timer
+      // In practice or consolidation mode, stop timer
       setIsTimerRunning(false);
+    }
+  };
+
+  const handleUnlockAndGoToConsolidation = () => {
+    setIsConsolidationUnlocked(true);
+    setIsLockedModalOpen(false);
+    setMode('consolidation');
+  };
+
+  const handleGoToConsolidationDirect = () => {
+    setIsConsolidationUnlocked(true);
+    setIsResultModalOpen(false);
+    setMode('consolidation');
+  };
+
+  const handleTogglePracticeAnswers = () => {
+    const next = !showPracticeAnswers;
+    setShowPracticeAnswers(next);
+    if (next) {
+      setIsConsolidationUnlocked(true);
     }
   };
 
@@ -220,6 +262,7 @@ export default function App() {
   // Test Submission & Result calculation
   const handleCompleteTest = () => {
     setIsTimerRunning(false);
+    setIsConsolidationUnlocked(true); // Complete test unlocks Consolidation
 
     let score = 0;
     const breakdown = QUESTIONS.map(q => {
@@ -266,6 +309,7 @@ export default function App() {
 
   const handleReviewInPractice = () => {
     setIsResultModalOpen(false);
+    setIsConsolidationUnlocked(true);
     setMode('practice');
     setShowPracticeAnswers(true);
   };
@@ -319,77 +363,116 @@ export default function App() {
         onResetTimer={() => setTimerSeconds(INITIAL_TEST_SECONDS)}
         onSubmitTest={handleCompleteTest}
         showPracticeAnswers={showPracticeAnswers}
-        onToggleShowAnswers={() => setShowPracticeAnswers(!showPracticeAnswers)}
+        onToggleShowAnswers={handleTogglePracticeAnswers}
         onResetAnswers={handleResetPractice}
         answeredCount={answeredQuestionsCount}
         totalQuestions={QUESTIONS.length}
+        isConsolidationUnlocked={isConsolidationUnlocked}
+        onAttemptLockedConsolidation={() => setIsLockedModalOpen(true)}
       />
 
-      {/* Main Dual-Panel Reading Arena */}
+      {/* Main Dual-Panel or Full-Screen Reading/Consolidation Arena */}
       <main
         ref={containerRef}
         className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative w-full"
       >
-        {/* Left: Passage Panel */}
-        <div
-          className="h-1/2 md:h-full overflow-hidden flex flex-col min-h-0"
-          style={{ width: isDesktop ? `calc(${splitRatio}% - 6px)` : '100%', flexShrink: 0 }}
-        >
-          <PassagePanel
-            paragraphs={PARAGRAPHS}
-            isPracticeMode={mode === 'practice'}
-            notes={passageNotes}
-            onNotesChange={setPassageNotes}
-            isNotesOpen={isPassageNotesOpen}
-            onToggleNotes={() => setIsPassageNotesOpen(!isPassageNotesOpen)}
-            highlightColor={highlightColor}
-            onSelectHighlightColor={setHighlightColor}
-            isHighlighterActive={isHighlighterActive}
-            onToggleHighlighter={() => setIsHighlighterActive(!isHighlighterActive)}
-            highlights={highlights}
-            onAddHighlight={handleAddHighlight}
-            onRemoveHighlight={handleRemoveHighlight}
-            onClearAllHighlights={handleClearAllHighlights}
-            highlightedParagraphTarget={highlightedParagraphTarget}
-            searchedEvidenceQuote={searchedEvidenceQuote}
-          />
-        </div>
+        {mode === 'consolidation' && isConsolidationFullWidth ? (
+          /* Full Screen Consolidation Panel */
+          <div className="w-full h-full overflow-hidden flex flex-col min-h-0">
+            <ConsolidationPanel
+              onLocateParagraph={handleLocateParagraph}
+              isFullWidth={true}
+              onToggleFullWidth={() => setIsConsolidationFullWidth(false)}
+              onReturnToPractice={() => setMode('practice')}
+              onReturnToTest={() => setMode('test')}
+            />
+          </div>
+        ) : (
+          /* Split View: Left Passage, Right Questions or Consolidation */
+          <>
+            {/* Left: Passage Panel */}
+            <div
+              className="h-1/2 md:h-full overflow-hidden flex flex-col min-h-0"
+              style={{ width: isDesktop ? `calc(${splitRatio}% - 6px)` : '100%', flexShrink: 0 }}
+            >
+              <PassagePanel
+                paragraphs={PARAGRAPHS}
+                isPracticeMode={mode === 'practice'}
+                notes={passageNotes}
+                onNotesChange={setPassageNotes}
+                isNotesOpen={isPassageNotesOpen}
+                onToggleNotes={() => setIsPassageNotesOpen(!isPassageNotesOpen)}
+                highlightColor={highlightColor}
+                onSelectHighlightColor={setHighlightColor}
+                isHighlighterActive={isHighlighterActive}
+                onToggleHighlighter={() => setIsHighlighterActive(!isHighlighterActive)}
+                highlights={highlights}
+                onAddHighlight={handleAddHighlight}
+                onRemoveHighlight={handleRemoveHighlight}
+                onClearAllHighlights={handleClearAllHighlights}
+                highlightedParagraphTarget={highlightedParagraphTarget}
+                searchedEvidenceQuote={searchedEvidenceQuote}
+              />
+            </div>
 
-        {/* Vertical Dividing Line & Draggable Resizer */}
-        <Divider
-          onMouseDown={handleDividerMouseDown}
-          onDoubleClick={handleResetSplit}
-        />
+            {/* Vertical Dividing Line & Draggable Resizer */}
+            <Divider
+              onMouseDown={handleDividerMouseDown}
+              onDoubleClick={handleResetSplit}
+            />
 
-        {/* Right: Question Panel */}
-        <div
-          className="h-1/2 md:h-full overflow-hidden flex flex-col min-h-0"
-          style={{ width: isDesktop ? `calc(${100 - splitRatio}% - 6px)` : '100%', flex: 1, minWidth: 0 }}
-        >
-          <QuestionsPanel
-            questions={QUESTIONS}
-            userAnswers={userAnswers}
-            onAnswerChange={handleAnswerChange}
-            isPracticeMode={mode === 'practice'}
-            showPracticeAnswers={showPracticeAnswers}
-            onLocateParagraph={handleLocateParagraph}
-            notes={questionNotes}
-            onNotesChange={setQuestionNotes}
-            isNotesOpen={isQuestionNotesOpen}
-            onToggleNotes={() => setIsQuestionNotesOpen(!isQuestionNotesOpen)}
-            flaggedQuestions={flaggedQuestions}
-            onToggleFlag={handleToggleFlag}
-            onSubmitTest={mode === 'practice' ? (showPracticeAnswers ? () => handleCompleteTest() : () => setShowPracticeAnswers(true)) : handleCompleteTest}
-            highlightColor={highlightColor}
-            onSelectHighlightColor={setHighlightColor}
-            isHighlighterActive={isHighlighterActive}
-            onToggleHighlighter={() => setIsHighlighterActive(!isHighlighterActive)}
-            highlights={questionHighlights}
-            onAddHighlight={handleAddQuestionHighlight}
-            onRemoveHighlight={handleRemoveQuestionHighlight}
-            onClearAllHighlights={handleClearAllQuestionHighlights}
-          />
-        </div>
+            {/* Right: Question Panel OR Consolidation Panel */}
+            <div
+              className="h-1/2 md:h-full overflow-hidden flex flex-col min-h-0"
+              style={{ width: isDesktop ? `calc(${100 - splitRatio}% - 6px)` : '100%', flex: 1, minWidth: 0 }}
+            >
+              {mode === 'consolidation' ? (
+                <ConsolidationPanel
+                  onLocateParagraph={handleLocateParagraph}
+                  isFullWidth={false}
+                  onToggleFullWidth={() => setIsConsolidationFullWidth(true)}
+                  onReturnToPractice={() => setMode('practice')}
+                  onReturnToTest={() => setMode('test')}
+                />
+              ) : (
+                <QuestionsPanel
+                  questions={QUESTIONS}
+                  userAnswers={userAnswers}
+                  onAnswerChange={handleAnswerChange}
+                  isPracticeMode={mode === 'practice'}
+                  showPracticeAnswers={showPracticeAnswers}
+                  onLocateParagraph={handleLocateParagraph}
+                  notes={questionNotes}
+                  onNotesChange={setQuestionNotes}
+                  isNotesOpen={isQuestionNotesOpen}
+                  onToggleNotes={() => setIsQuestionNotesOpen(!isQuestionNotesOpen)}
+                  flaggedQuestions={flaggedQuestions}
+                  onToggleFlag={handleToggleFlag}
+                  onSubmitTest={
+                    mode === 'practice'
+                      ? showPracticeAnswers
+                        ? () => handleCompleteTest()
+                        : () => {
+                            setShowPracticeAnswers(true);
+                            setIsConsolidationUnlocked(true);
+                          }
+                      : handleCompleteTest
+                  }
+                  onGoToConsolidation={handleGoToConsolidationDirect}
+                  isConsolidationUnlocked={isConsolidationUnlocked}
+                  highlightColor={highlightColor}
+                  onSelectHighlightColor={setHighlightColor}
+                  isHighlighterActive={isHighlighterActive}
+                  onToggleHighlighter={() => setIsHighlighterActive(!isHighlighterActive)}
+                  highlights={questionHighlights}
+                  onAddHighlight={handleAddQuestionHighlight}
+                  onRemoveHighlight={handleRemoveQuestionHighlight}
+                  onClearAllHighlights={handleClearAllQuestionHighlights}
+                />
+              )}
+            </div>
+          </>
+        )}
       </main>
 
       {/* Test Results Modal */}
@@ -399,6 +482,15 @@ export default function App() {
         onClose={() => setIsResultModalOpen(false)}
         onRetake={handleResetTest}
         onReviewInPractice={handleReviewInPractice}
+        onGoToConsolidation={handleGoToConsolidationDirect}
+      />
+
+      {/* Locked Consolidation Attempt Modal */}
+      <LockedConsolidationModal
+        isOpen={isLockedModalOpen}
+        onClose={() => setIsLockedModalOpen(false)}
+        onUnlockAndProceed={handleUnlockAndGoToConsolidation}
+        currentMode={mode === 'test' ? 'test' : 'practice'}
       />
     </div>
   );
